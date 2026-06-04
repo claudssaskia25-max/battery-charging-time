@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solar Battery Charging Calculator</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+body {
+  font-family: Arial, sans-serif;
+  max-width: 550px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f0f8f5;
+}
+.card {
+  background: #ffffff;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+h2 {
+  text-align: center;
+  color: #2c6e49;
+  margin-top: 0;
+}
+label {
+  display: block;
+  margin: 18px 0 6px;
+  font-weight: 500;
+  color: #333333;
+}
+input, select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 16px;
+}
+.button-group {
+  display: flex;
+  gap: 12px;
+  margin-top: 25px;
+}
+button {
+  flex: 1;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.calculate-btn {
+  background-color: #28a745;
+  color: white;
+}
+.calculate-btn:hover {
+  background-color: #218838;
+}
+.reset-btn {
+  background-color: #dc3545;
+  color: white;
+}
+.reset-btn:hover {
+  background-color: #c82333;
+}
+.result {
+  margin-top: 25px;
+  padding: 20px;
+  background-color: #e9f9ee;
+  border-radius: 10px;
+  border-left: 5px solid #28a745;
+  font-size: 16px;
+  line-height: 1.6;
+}
+.note {
+  font-size: 13px;
+  color: #666;
+  margin-top: 5px;
+  font-style: italic;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h2>Solar Battery Charging Calculator</h2>
+
+  <label>1. Battery Voltage (Volts)</label>
+  <input type="number" id="voltage" value="48" placeholder="e.g. 12, 24, or 48">
+  <div class="note">Found printed on your battery or manual</div>
+
+  <label>2. Battery Size (Amp Hours - Ah)</label>
+  <input type="number" id="capacity" value="400" placeholder="e.g. 100, 200, 400">
+  <div class="note">Tells how much energy your battery can hold</div>
+
+  <label>3. Current Charge Level (%)</label>
+  <input type="number" id="soc" value="50" placeholder="e.g. 20 = low, 100 = full">
+  <div class="note">How full your battery is right now</div>
+
+  <label>4. Total Solar Panel Power (Kilowatts - kW)</label>
+  <input type="number" step="0.1" id="solarKw" value="5" placeholder="e.g. 1, 3, 5">
+  <div class="note">Add up all panel watts then divide by 1000 (example: 5000W = 5kW)</div>
+
+  <label>5. Average Daily Sunlight Hours</label>
+  <input type="number" step="0.1" id="psh" value="5" placeholder="e.g. 4, 5, 6">
+  <div class="note">Hours of strong, usable sunlight per day</div>
+
+  <label>6. Charge Controller Efficiency (%)</label>
+  <input type="number" id="mppt" value="98" placeholder="e.g. 90, 95, 98">
+  <div class="note">Usually 90–98% for modern controllers</div>
+
+  <label>7. Battery Type</label>
+  <select id="batteryType">
+    <option value="0.95">Lithium (most efficient)</option>
+    <option value="0.85">Lead Acid / Gel / AGM</option>
+  </select>
+  <div class="note">Different batteries charge at different speeds</div>
+
+  <div class="button-group">
+    <button class="calculate-btn" onclick="calculate()">See Results</button>
+    <button class="reset-btn" onclick="resetForm()">Reset</button>
+  </div>
+
+  <div class="result" id="result">
+    Fill in the details above and click "See Results"
+  </div>
+</div>
+
+<script>
+function calculate() {
+  // Get values entered by user
+  let voltage = parseFloat(document.getElementById("voltage").value);
+  let capacityAh = parseFloat(document.getElementById("capacity").value);
+  let currentChargePercent = parseFloat(document.getElementById("soc").value);
+  let solarKw = parseFloat(document.getElementById("solarKw").value);
+  let sunlightHours = parseFloat(document.getElementById("psh").value);
+  let controllerEfficiency = parseFloat(document.getElementById("mppt").value) / 100;
+  let batteryEfficiency = parseFloat(document.getElementById("batteryType").value);
+
+  // Convert kW back to Watts for calculation logic
+  let solarWatts = solarKw * 1000;
+
+  // Do the calculations
+  let totalBatteryEnergy = (voltage * capacityAh) / 1000; // in kWh
+  let energyNeeded = (totalBatteryEnergy * (100 - currentChargePercent)) / 100;
+  let usableSolarKw = (solarWatts * controllerEfficiency) / 1000; // now in kW
+  let dailyEnergyFromSun = solarKw * sunlightHours * controllerEfficiency; // in kWh
+  let chargeTimeInSunlightHours = (energyNeeded) / (usableSolarKw * batteryEfficiency);
+  let chargeTimeInDays = energyNeeded / dailyEnergyFromSun;
+  let chargingAmps = (solarWatts * controllerEfficiency) / voltage;
+
+  // Show results in simple language
+  document.getElementById("result").innerHTML =
+    "<strong>🔋 Total Energy Your Battery Can Hold:</strong><br>" +
+    totalBatteryEnergy.toFixed(2) + " kilowatt-hours (kWh)<br><br>" +
+
+    "<strong>⚡ Energy Still Needed To Fill It:</strong><br>" +
+    energyNeeded.toFixed(2) + " kWh<br><br>" +
+
+    "<strong>☀️ Usable Power From Your Panels:</strong><br>" +
+    usableSolarKw.toFixed(2) + " Kilowatts (kW)<br><br>" +
+
+    "<strong>🔌 Approximate Charging Current:</strong><br>" +
+    chargingAmps.toFixed(1) + " Amps<br><br>" +
+
+    "<strong>📈 Energy Produced On A Sunny Day:</strong><br>" +
+    dailyEnergyFromSun.toFixed(2) + " kWh per day<br><br>" +
+
+    "<strong>⏱️ Time To Fully Charge:</strong><br>" +
+    chargeTimeInSunlightHours.toFixed(1) + " hours of strong sunlight<br>" +
+    "<em>≈ That equals about " + chargeTimeInDays.toFixed(1) + " full day(s) of normal sunlight</em>";
+}
+
+function resetForm() {
+  document.getElementById("voltage").value = "48";
+  document.getElementById("capacity").value = "400";
+  document.getElementById("soc").value = "50";
+  document.getElementById("solarKw").value = "5";
+  document.getElementById("psh").value = "5";
+  document.getElementById("mppt").value = "98";
+  document.getElementById("batteryType").value = "0.95";
+  document.getElementById("result").innerHTML = "Fill in the details above and click \"See Results\"";
+}
+</script>
+
+</body>
+</html>
